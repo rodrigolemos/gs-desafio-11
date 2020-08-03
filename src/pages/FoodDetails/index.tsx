@@ -80,8 +80,16 @@ const FoodDetails: React.FC = () => {
           formattedPrice: formatValue(response.data.price),
         };
         setFood(newFood);
+
+        const newExtras = newFood.extras.map((extra: Extra[]) => {
+          return {
+            ...extra,
+            quantity: 0,
+          };
+        });
+        setExtras(newExtras);
       } catch (err) {
-        console.log(err);
+        // console.log(err);
       }
     }
 
@@ -89,11 +97,25 @@ const FoodDetails: React.FC = () => {
   }, [routeParams]);
 
   function handleIncrementExtra(id: number): void {
-    // Increment extra quantity
+    const newExtras = extras.map(extra => {
+      if (extra.id === id) {
+        extra.quantity += 1;
+      }
+      return extra;
+    });
+    setExtras(newExtras);
   }
 
   function handleDecrementExtra(id: number): void {
-    // Decrement extra quantity
+    const newExtras = extras.map(extra => {
+      if (extra.id === id) {
+        if (extra.quantity > 0) {
+          extra.quantity -= 1;
+        }
+      }
+      return extra;
+    });
+    setExtras(newExtras);
   }
 
   function handleIncrementFood(): void {
@@ -106,10 +128,26 @@ const FoodDetails: React.FC = () => {
 
   const toggleFavorite = useCallback(() => {
     // Toggle if food is favorite or not
+    if (!isFavorite) {
+      api.post('/favorites', food);
+      setIsFavorite(true);
+    } else {
+      api.delete(`/favorites/${food.id}`);
+      setIsFavorite(false);
+    }
   }, [isFavorite, food]);
 
   const cartTotal = useMemo(() => {
-    // Calculate cartTotal
+    const totalExtras = extras.reduce(
+      (acc, extra) => {
+        acc.total += extra.value * extra.quantity;
+        return acc;
+      },
+      {
+        total: 0,
+      },
+    );
+    return formatValue(food.price * foodQuantity + totalExtras.total);
   }, [extras, food, foodQuantity]);
 
   async function handleFinishOrder(): Promise<void> {
